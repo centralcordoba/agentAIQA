@@ -1,0 +1,14 @@
+{
+  "path": "C:\\repositories\\MiMCS",
+  "provider": "none",
+  "model": null,
+  "api_base": null,
+  "extensions": [
+    ".cs",
+    ".js",
+    ".html",
+    ".cshtml"
+  ],
+  "output": "C:\\repositories\\MiMCS\\REPORTE_AUDITORIA.md",
+  "no_llm": true
+}

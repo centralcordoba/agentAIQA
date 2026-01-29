@@ -1,0 +1,292 @@
+================================================================================
+                         CODE AUDIT AGENT - GUIA DE USO
+================================================================================
+
+1. QUE ES CODE AUDIT AGENT
+================================================================================
+
+Code Audit Agent es una herramienta de analisis estatico de codigo escrita en
+Python. Su proposito es detectar escenarios de errores en tiempo de ejecucion
+(runtime crashes) en repositorios de codigo fuente.
+
+La herramienta combina dos estrategias:
+
+  - Escaneo por patrones (regex): Detecta mas de 25 patrones peligrosos en
+    archivos .cs, .js, .ts, .tsx, .html y .cshtml de forma rapida y sin
+    dependencias externas. Incluye deteccion de errores de logica.
+
+  - Analisis con LLM (opcional): Envia los hallazgos a un modelo de lenguaje
+    (Ollama local, OpenAI o Anthropic) para clasificar severidad, descartar
+    falsos positivos y sugerir correcciones.
+
+El resultado es un reporte en formato Markdown con los hallazgos organizados
+por severidad, contexto del codigo afectado y recomendaciones de correccion.
+
+
+2. ESTRUCTURA DEL PROYECTO
+================================================================================
+
+  code_audit_agent/
+  |-- main.py            Punto de entrada. Menu interactivo, argumentos CLI
+  |                      y orquestacion del flujo de auditoria.
+  |-- scanner.py         Motor de deteccion por patrones. Escanea archivos
+  |                      buscando mas de 20 patrones peligrosos y detecta
+  |                      guardas de proteccion existentes.
+  |-- analyzer.py        Modulo de integracion con LLMs. Usa litellm para
+  |                      enviar hallazgos a Ollama, OpenAI o Anthropic.
+  |-- reporter.py        Generador de reportes en Markdown con resumen
+  |                      ejecutivo, hallazgos detallados y estadisticas.
+  |-- config.json        Archivo de configuracion persistente (se crea
+  |                      automaticamente al usar el menu interactivo).
+  |-- requirements.txt   Dependencias de Python.
+
+
+3. QUE DETECTA
+================================================================================
+
+Patrones de crash en C# (.cs):
+  - Acceso a indices hardcodeados en arreglos/listas
+  - Split() seguido de acceso por indice sin validar
+  - FirstOrDefault/ToList/ToArray con acceso por indice
+  - Acceso a posicion [0] en colecciones sin verificar
+  - DataSet.Tables[]/Rows[] sin validacion
+  - Parse sin TryParse (int.Parse, Convert.ToInt32, etc.)
+  - ToString() sobre objetos nullable
+  - .First()/.Single()/.Last() sin verificacion previa
+  - Casting directo sin verificacion (as/is)
+  - Acceso directo a AppSettings/ConfigurationManager
+  - Division potencial por cero
+
+Patrones en JavaScript/TypeScript/HTML/Razor (.js, .ts, .tsx, .html, .cshtml):
+  - document.getElementById sin verificar null
+  - document.querySelector sin verificar null
+  - JSON.parse sin try-catch
+  - Acceso a @Model en Razor sin verificar null
+  - TypeScript: uso de non-null assertion (!) que oculta errores
+  - TypeScript: cast a 'any' que elimina seguridad de tipos
+  - TypeScript: acceso a propiedades sin optional chaining (?.)
+
+Patrones de ERRORES DE LOGICA (C#, JS, TS):
+  - Misma variable pasada dos veces como parametro: func(x, x)
+  - Orden incorrecto de coordenadas: setLocation(lng, lng) en vez de (lng, lat)
+  - Condiciones duplicadas en if/else if (error copy-paste)
+  - El LLM tambien analiza:
+    * Parametros en orden incorrecto por tipos similares
+    * Uso de variable equivocada (userId vs customerId)
+    * Errores de logica booleana
+    * Errores off-by-one en bucles
+
+Guardas reconocidas (el scanner NO reporta si detecta proteccion):
+  - .Count > N, .Length >= N
+  - .Any(), != null &&, ?.
+  - TryParse, try-catch
+  - Operador as / is
+  - string.IsNullOrEmpty / IsNullOrWhiteSpace
+  - @if en Razor
+
+
+4. REQUISITOS PREVIOS (INSTALACION)
+================================================================================
+
+4.1 Python
+----------
+Se requiere Python 3.8 o superior instalado en el sistema.
+
+Verificar instalacion:
+  python --version
+
+Si no esta instalado, descargar desde: https://www.python.org/downloads/
+
+4.2 Dependencias de Python
+--------------------------
+El proyecto tiene una unica dependencia externa: litellm (solo necesaria si
+se va a usar analisis con LLM).
+
+Instalar dependencias:
+  cd C:\repositories\MiMCS\tools\code_audit_agent
+  pip install -r requirements.txt
+
+Esto instala:
+  - litellm >= 1.40.0  (libreria unificada para multiples proveedores de LLM)
+
+Si solo se va a usar el modo "scanner-only" (sin LLM), no es estrictamente
+necesario instalar litellm, aunque se recomienda para evitar errores de
+importacion.
+
+4.3 Proveedores de LLM (opcionales)
+------------------------------------
+Solo necesarios si se desea usar analisis inteligente con IA:
+
+  a) Ollama (local, gratuito):
+     - Instalar desde: https://ollama.com
+     - Descargar un modelo: ollama pull deepcoder:14b
+     - Ollama debe estar corriendo al momento de ejecutar el agente
+
+  b) OpenAI (nube, requiere API key):
+     - Configurar variable de entorno: set OPENAI_API_KEY=tu-clave-aqui
+
+  c) Anthropic (nube, requiere API key):
+     - Configurar variable de entorno: set ANTHROPIC_API_KEY=tu-clave-aqui
+
+
+5. COMO EJECUTAR
+================================================================================
+
+5.1 Modo interactivo (recomendado para primera vez)
+----------------------------------------------------
+  python main.py
+
+  El programa presenta un menu guiado que permite:
+    1. Seleccionar el directorio a escanear
+    2. Elegir proveedor de LLM (ollama/openai/anthropic/ninguno)
+    3. Seleccionar modelo especifico
+    4. Definir extensiones de archivo a escanear
+    5. Definir ruta de salida del reporte
+
+  La configuracion se guarda automaticamente en config.json para futuras
+  ejecuciones.
+
+5.2 Con configuracion guardada
+------------------------------
+  python main.py
+
+  Si ya existe un config.json, el programa pregunta si se desea usar la
+  configuracion guardada o reconfigurar.
+
+5.3 Forzar menu interactivo (ignorar config.json)
+--------------------------------------------------
+  python main.py --interactive
+
+5.4 Modo linea de comandos (avanzado)
+--------------------------------------
+  Escaneo sin LLM (solo patrones):
+    python main.py --path C:\repositories\MiMCS --no-llm
+
+  Escaneo con Ollama:
+    python main.py --path C:\repositories\MiMCS --provider ollama --model ollama/deepcoder:14b
+
+  Escaneo con OpenAI:
+    python main.py --path C:\repositories\MiMCS --provider openai --model gpt-4o
+
+  Escaneo con Anthropic:
+    python main.py --path C:\repositories\MiMCS --provider anthropic --model claude-sonnet-4-20250514
+
+  Todos los argumentos CLI:
+    -p, --path        Directorio raiz a escanear
+    -m, --model       Modelo de LLM a usar
+    --provider        Proveedor: ollama, openai, anthropic, none
+    --api-base        URL base de la API (opcional)
+    -o, --output      Ruta del archivo de reporte de salida
+    -e, --extensions  Extensiones de archivo a escanear (ej: .cs .js .html)
+    --no-llm          Ejecutar solo el scanner sin analisis LLM
+    --interactive     Forzar el menu interactivo
+
+
+6. FLUJO DE EJECUCION
+================================================================================
+
+El agente ejecuta un pipeline de 3 etapas:
+
+  ETAPA 1 - ESCANEO (scanner.py)
+  +-----------------------------------------------------------------+
+  | Recorre recursivamente el directorio especificado               |
+  | Filtra archivos por extension (.cs, .js, .ts, .tsx, .html...)   |
+  | Aplica 25+ patrones regex por cada archivo                      |
+  | Detecta guardas de proteccion existentes                        |
+  | Captura 5 lineas de contexto antes y despues del hallazgo       |
+  | Resultado: lista de hallazgos (findings) con metadatos          |
+  +-----------------------------------------------------------------+
+                              |
+                              v
+  ETAPA 2 - ANALISIS (analyzer.py) [opcional]
+  +-----------------------------------------------------------------+
+  | Envia cada hallazgo al modelo LLM seleccionado                  |
+  | El LLM detecta CRASHES y ERRORES DE LOGICA:                     |
+  |   - Parametros en orden incorrecto (lat,lat vs lat,lng)         |
+  |   - Variables equivocadas (userId vs customerId)                |
+  |   - Errores copy-paste, condiciones imposibles, off-by-one      |
+  | El LLM clasifica la severidad:                                  |
+  |   CRITICAL - Crash/error logico en flujo normal de produccion   |
+  |   HIGH     - Crash/error en datos de caso limite                |
+  |   MEDIUM   - Crash/error con datos inusuales                    |
+  |   LOW      - Improbable pero tecnicamente inseguro              |
+  |   FALSE_POSITIVE - No es un bug real                            |
+  | El LLM sugiere correcciones con codigo before/after             |
+  | Si no hay LLM, se asigna severidad NEEDS_REVIEW                |
+  +-----------------------------------------------------------------+
+                              |
+                              v
+  ETAPA 3 - REPORTE (reporter.py)
+  +-----------------------------------------------------------------+
+  | Genera un documento Markdown con:                               |
+  |   - Resumen ejecutivo con conteo por severidad                  |
+  |   - Hallazgos detallados agrupados por severidad                |
+  |   - Contexto del codigo afectado con numeros de linea           |
+  |   - Correcciones sugeridas (si se uso LLM)                     |
+  |   - Estadisticas por archivo                                    |
+  |   - Falsos positivos identificados                              |
+  |   - Recomendaciones generales                                   |
+  +-----------------------------------------------------------------+
+
+
+7. ARCHIVO DE CONFIGURACION (config.json)
+================================================================================
+
+Ejemplo de config.json:
+
+  {
+    "path": "C:\\repositories\\MiMCS",
+    "provider": "none",
+    "model": null,
+    "api_base": null,
+    "extensions": [".cs", ".js", ".ts", ".tsx", ".html", ".cshtml"],
+    "output": "C:\\repositories\\MiMCS\\REPORTE_AUDITORIA.md",
+    "no_llm": true
+  }
+
+Campos:
+  path        Directorio raiz a escanear
+  provider    Proveedor de LLM: "ollama", "openai", "anthropic" o "none"
+  model       Identificador del modelo (ej: "ollama/deepcoder:14b", "gpt-4o")
+  api_base    URL base del API (solo para configuraciones personalizadas)
+  extensions  Lista de extensiones de archivo a incluir en el escaneo
+  output      Ruta completa del archivo de reporte de salida
+  no_llm      true para modo scanner-only, false para usar LLM
+
+
+8. EJEMPLO DE USO RAPIDO
+================================================================================
+
+  Paso 1: Abrir terminal en el directorio del agente
+    cd C:\repositories\MiMCS\tools\code_audit_agent
+
+  Paso 2: Instalar dependencias (solo la primera vez)
+    pip install -r requirements.txt
+
+  Paso 3: Ejecutar escaneo rapido sin LLM
+    python main.py --path C:\repositories\MiMCS --no-llm -o reporte.md
+
+  Paso 4: Revisar el reporte generado
+    El archivo reporte.md contiene todos los hallazgos organizados por
+    severidad con contexto de codigo y recomendaciones.
+
+
+9. NOTAS ADICIONALES
+================================================================================
+
+  - El modo scanner-only (--no-llm) es significativamente mas rapido ya que
+    no requiere comunicacion con ningun modelo de IA.
+
+  - Cuando se usa Ollama, el servicio debe estar corriendo localmente antes
+    de ejecutar el agente. Verificar con: ollama list
+
+  - Los hallazgos marcados como NEEDS_REVIEW (modo sin LLM) requieren
+    revision manual para determinar si son bugs reales o falsos positivos.
+
+  - El reporte se genera en formato Markdown (.md) que puede visualizarse
+    en cualquier editor compatible (VS Code, GitHub, etc.).
+
+  - El scanner reconoce automaticamente guardas de proteccion existentes
+    en el codigo, por lo que no reporta patrones que ya estan protegidos.
+
+================================================================================
