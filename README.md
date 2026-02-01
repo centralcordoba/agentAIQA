@@ -277,7 +277,7 @@ agentAIQA/
 
 Ollama te permite ejecutar modelos de IA **localmente en tu PC**, sin costo y con total privacidad. Tu código nunca sale de tu máquina.
 
-### Paso 1: Descargar Ollama
+### 1️⃣ Descargar Ollama
 
 #### Windows
 
@@ -305,7 +305,7 @@ curl -fsSL https://ollama.com/install.sh | sh
 
 ---
 
-### Paso 2: Verificar la Instalación
+### 2️⃣ Verificar la Instalación
 
 Abre una **nueva terminal** (CMD, PowerShell, o Terminal) y ejecuta:
 
@@ -322,7 +322,7 @@ Si dice "command not found", reinicia tu terminal o PC.
 
 ---
 
-### Paso 3: Iniciar el Servicio Ollama
+### 3️⃣ Iniciar el Servicio Ollama
 
 #### Windows
 Ollama se inicia automáticamente. Busca el ícono 🦙 en la bandeja del sistema (esquina inferior derecha).
@@ -349,7 +349,7 @@ NAME    ID    SIZE    MODIFIED
 
 ---
 
-### Paso 4: Descargar DeepSeek (Modelo Gratuito)
+### 4️⃣ Descargar DeepSeek (Modelo Gratuito)
 
 DeepSeek es un modelo de código abierto excelente para análisis de código. Hay varias versiones:
 
@@ -388,7 +388,7 @@ ollama pull deepcoder:14b
 
 ---
 
-### Paso 5: Verificar el Modelo Descargado
+### 5️⃣ Verificar el Modelo Descargado
 
 ```bash
 ollama list
@@ -402,7 +402,7 @@ deepseek-r1:14b         abc123def456    8.9 GB    2 minutes ago
 
 ---
 
-### Paso 6: Probar el Modelo (Opcional)
+### 6️⃣ Probar el Modelo (Opcional)
 
 Puedes chatear directamente con el modelo para verificar que funciona:
 
@@ -419,7 +419,7 @@ Para salir del chat: `Ctrl+D` o escribe `/bye`
 
 ---
 
-### Paso 7: Ejecutar el Agente con Ollama
+### 7️⃣ Ejecutar el Agente con Ollama
 
 Ahora puedes usar el agente con tu modelo local:
 
