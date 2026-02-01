@@ -273,6 +273,220 @@ agentAIQA/
 
 ---
 
+## 🦙 Guía Completa: Instalar Ollama + DeepSeek (GRATIS)
+
+Ollama te permite ejecutar modelos de IA **localmente en tu PC**, sin costo y con total privacidad. Tu código nunca sale de tu máquina.
+
+### Paso 1: Descargar Ollama
+
+#### Windows
+
+1. Ve a **https://ollama.com/download**
+2. Click en **"Download for Windows"**
+3. Ejecuta el instalador `OllamaSetup.exe`
+4. Sigue el wizard (Next → Next → Install → Finish)
+
+#### macOS
+
+```bash
+# Opción 1: Descarga directa
+# Ve a https://ollama.com/download y descarga el .dmg
+
+# Opción 2: Con Homebrew
+brew install ollama
+```
+
+#### Linux
+
+```bash
+# Instalación con una línea
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+---
+
+### Paso 2: Verificar la Instalación
+
+Abre una **nueva terminal** (CMD, PowerShell, o Terminal) y ejecuta:
+
+```bash
+ollama --version
+```
+
+Deberías ver algo como:
+```
+ollama version 0.5.4
+```
+
+Si dice "command not found", reinicia tu terminal o PC.
+
+---
+
+### Paso 3: Iniciar el Servicio Ollama
+
+#### Windows
+Ollama se inicia automáticamente. Busca el ícono 🦙 en la bandeja del sistema (esquina inferior derecha).
+
+#### macOS / Linux
+```bash
+# Iniciar el servicio
+ollama serve
+```
+
+> 💡 **Tip:** En Windows, Ollama corre como servicio en background. En Linux/Mac puedes dejarlo corriendo en una terminal separada.
+
+#### Verificar que está corriendo
+
+```bash
+# Debe responder con la lista de modelos (vacía al inicio)
+ollama list
+```
+
+Salida esperada:
+```
+NAME    ID    SIZE    MODIFIED
+```
+
+---
+
+### Paso 4: Descargar DeepSeek (Modelo Gratuito)
+
+DeepSeek es un modelo de código abierto excelente para análisis de código. Hay varias versiones:
+
+#### Opción A: DeepSeek Coder V2 (Recomendado para análisis de código)
+
+```bash
+# 16GB de RAM recomendados
+ollama pull deepseek-coder-v2:16b
+```
+
+#### Opción B: DeepSeek R1 (Mejor razonamiento)
+
+```bash
+# Excelente para detectar bugs complejos
+ollama pull deepseek-r1:14b
+```
+
+#### Opción C: DeepSeek R1 Distill (Más ligero)
+
+```bash
+# Para PCs con menos recursos (8GB RAM)
+ollama pull deepseek-r1:7b
+```
+
+#### Opción D: DeepCoder (Optimizado para código)
+
+```bash
+# Muy bueno para auditoría de código
+ollama pull deepcoder:14b
+```
+
+> ⏳ **La descarga puede tardar** dependiendo de tu conexión:
+> - Modelos 7B: ~4GB, 5-10 minutos
+> - Modelos 14B: ~8GB, 10-20 minutos
+> - Modelos 16B: ~9GB, 15-25 minutos
+
+---
+
+### Paso 5: Verificar el Modelo Descargado
+
+```bash
+ollama list
+```
+
+Salida esperada:
+```
+NAME                    ID              SIZE      MODIFIED
+deepseek-r1:14b         abc123def456    8.9 GB    2 minutes ago
+```
+
+---
+
+### Paso 6: Probar el Modelo (Opcional)
+
+Puedes chatear directamente con el modelo para verificar que funciona:
+
+```bash
+ollama run deepseek-r1:14b
+```
+
+Escribe una pregunta de prueba:
+```
+>>> ¿Qué bug tiene este código? var x = list[0];
+```
+
+Para salir del chat: `Ctrl+D` o escribe `/bye`
+
+---
+
+### Paso 7: Ejecutar el Agente con Ollama
+
+Ahora puedes usar el agente con tu modelo local:
+
+```bash
+# Usando el menú interactivo
+python main.py
+
+# O directamente por CLI
+python main.py --path ./tu-proyecto --provider ollama --model ollama/deepseek-r1:14b
+```
+
+---
+
+### 🔧 Troubleshooting
+
+#### "Error: model not found"
+```bash
+# Verifica que el modelo está descargado
+ollama list
+
+# Si no aparece, descárgalo de nuevo
+ollama pull deepseek-r1:14b
+```
+
+#### "Error: connection refused"
+```bash
+# Ollama no está corriendo. Inícialo:
+ollama serve
+
+# O en Windows, busca el ícono en la bandeja y click derecho → Start
+```
+
+#### "Error: out of memory"
+```bash
+# Tu modelo es muy grande para tu RAM. Usa uno más pequeño:
+ollama pull deepseek-r1:7b
+```
+
+#### Verificar que Ollama responde
+```bash
+# Debe retornar una respuesta JSON
+curl http://localhost:11434/api/tags
+```
+
+---
+
+### 📊 Comparativa de Modelos para Análisis de Código
+
+| Modelo | Tamaño | RAM Mínima | Velocidad | Calidad | Uso Recomendado |
+|--------|--------|------------|-----------|---------|-----------------|
+| `deepcoder:1.5b` | 1GB | 4GB | ⚡⚡⚡⚡⚡ | ⭐⭐ | Testing rápido |
+| `deepseek-r1:7b` | 4GB | 8GB | ⚡⚡⚡⚡ | ⭐⭐⭐ | PCs modestas |
+| `deepcoder:14b` | 8GB | 16GB | ⚡⚡⚡ | ⭐⭐⭐⭐ | Balance ideal |
+| `deepseek-r1:14b` | 9GB | 16GB | ⚡⚡⚡ | ⭐⭐⭐⭐⭐ | Mejor razonamiento |
+| `deepseek-coder-v2:16b` | 9GB | 16GB | ⚡⚡ | ⭐⭐⭐⭐⭐ | Código complejo |
+
+---
+
+### 💡 Tips para Mejor Rendimiento
+
+1. **Cierra otras aplicaciones** que consuman RAM antes de correr el modelo
+2. **GPU NVIDIA**: Ollama usa CUDA automáticamente si tienes una GPU compatible
+3. **SSD recomendado**: Los modelos cargan más rápido desde SSD que HDD
+4. **Primera ejecución lenta**: El modelo se carga en memoria la primera vez, luego es más rápido
+
+---
+
 ## 📋 Severidades
 
 | Nivel | Descripción | Ejemplo |
