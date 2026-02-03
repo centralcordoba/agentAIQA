@@ -23,6 +23,25 @@
 
 ---
 
+## 📋 Requisitos
+
+| Requisito | Descripción | Instalación |
+|-----------|-------------|-------------|
+| **Python 3.8+** | Requerido | [python.org/downloads](https://www.python.org/downloads/) |
+| **pip** | Gestor de paquetes | Incluido con Python |
+| **Git** | Para clonar el repo | [git-scm.com](https://git-scm.com/) (o descarga el ZIP) |
+
+### Opcionales (según el provider LLM que elijas)
+
+| Provider | Requisito |
+|----------|-----------|
+| **Ollama** | [ollama.com](https://ollama.com/) instalado y corriendo |
+| **OpenAI** | Variable de entorno `OPENAI_API_KEY` |
+| **Anthropic** | Variable de entorno `ANTHROPIC_API_KEY` |
+| **Sin LLM** | Ninguno adicional (modo `--no-llm`) |
+
+---
+
 ## ⚡ Quick Start
 
 ```bash
