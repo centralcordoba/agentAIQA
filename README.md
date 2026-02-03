@@ -27,7 +27,7 @@
 
 ```bash
 # Clonar e instalar
-git clone https://github.com/your-repo/agentAIQA.git
+git clone https://github.com/centralcordoba/agentAIQA.git
 cd agentAIQA
 pip install -r requirements.txt
 
